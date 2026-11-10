@@ -10,7 +10,7 @@ provider:
   memorySize: 256
   timeout: 30
   iam:
-    role: arn:aws:iam::804190897568:role/LabRole
+    role: arn:aws:iam::${aws:accountId}:role/LabRole
   environment:
     ALUMNOS_TABLE: !Ref AlumnosTable
     CANVAS_TABLE: !Ref CanvasTable

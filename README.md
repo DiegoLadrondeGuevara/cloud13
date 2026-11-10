@@ -19,8 +19,8 @@ flowchart LR
 
 ## Antes del despliegue
 
-- Cuenta AWS de destino: `804190897568`; región: `us-east-1`.
-- Rol de ejecución Lambda definido en `serverless.yml`: `arn:aws:iam::804190897568:role/LabRole`. Este rol debe poder escribir en DynamoDB, publicar en SNS y escribir logs en CloudWatch. La identidad que ejecuta `serverless deploy` también necesita permisos para crear el stack y pasar `LabRole` a Lambda.
+- Cuenta AWS de destino para este laboratorio: `904208419583`; región: `us-east-1`.
+- Rol de ejecución Lambda definido en `serverless.yml`: `LabRole` de la cuenta AWS activa (`${aws:accountId}`). Este rol debe poder escribir en DynamoDB, publicar en SNS y escribir logs en CloudWatch. La identidad que ejecuta `serverless deploy` también necesita permisos para crear el stack y pasar `LabRole` a Lambda.
 - Una instancia EC2 Amazon Linux 2023 con acceso a Internet, Git, Node.js, npm, AWS CLI y credenciales temporales o un perfil de instancia válidos de la **misma cuenta**. `LabRole` en la configuración es el rol de las Lambda; no configura automáticamente las credenciales de EC2.
 - Un correo propio para recibir y confirmar la suscripción de SNS.
 - Nombres `NuevoAlumno`, `t_alumnos`, `t_alumnos_canvas`, `t_alumnos_seguridad` y las tres Lambda libres en la cuenta/región. El taller supone que aún no existen.
@@ -34,9 +34,10 @@ sudo dnf install -y git nodejs22 nodejs22-npm python3
 node --version
 aws --version
 aws sts get-caller-identity --query Account --output text
+aws iam get-role --role-name LabRole --query 'Role.Arn' --output text
 ```
 
-**Detente si la cuenta no es `804190897568`.** Selecciona el perfil/credenciales del laboratorio de esa cuenta antes de seguir. Evita guardar claves permanentes en el repositorio.
+**Detente si la cuenta no es `904208419583` o el ARN de `LabRole` no pertenece a esa cuenta.** Selecciona el perfil/credenciales del laboratorio de esa cuenta antes de seguir. Evita guardar claves permanentes en el repositorio.
 
 La AMI de Amazon Linux suele traer AWS CLI. Si `aws --version` no funciona, instálalo siguiendo la [guía oficial de AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
@@ -49,7 +50,7 @@ export NOTIFICATION_EMAIL='tu-correo@gmail.com'
 npx serverless deploy --region us-east-1 --stage dev
 ```
 
-Sustituye el correo por el tuyo. Si Serverless solicita iniciar sesión en la organización `diegoladrondeg`, usa `npx serverless login`; confirma luego que el proveedor de AWS de Serverless esté conectado a la cuenta `804190897568` antes de repetir el despliegue.
+Sustituye el correo por el tuyo. Si Serverless solicita iniciar sesión en la organización `diegoladrondeg`, usa `npx serverless login`; confirma luego que el proveedor de AWS de Serverless esté conectado a la cuenta `904208419583` antes de repetir el despliegue.
 
 Serverless v3.40 puede mostrar una advertencia de validación para `python3.12` porque su lista interna de runtimes está desactualizada. La plantilla compilada conserva `python3.12`, admitido por Lambda; esa advertencia no impide empaquetar el servicio.
 
@@ -86,7 +87,7 @@ Las últimas dos consultas no deben devolver `Item`. Tampoco debe llegar un corr
 
 ## Capturas para el documento
 
-1. **Tras `aws sts get-caller-identity`:** terminal EC2 con la cuenta `804190897568`, sin mostrar claves.
+1. **Tras `aws sts get-caller-identity`:** terminal EC2 con la cuenta `904208419583`, sin mostrar claves.
 2. **Tras `serverless deploy`:** salida de despliegue correcto y stack en CloudFormation.
 3. **Antes de probar:** tema `NuevoAlumno` en la consola SNS con tres suscripciones: email, Canvas y Seguridad. Abre el detalle de cada una para mostrar `tenant_id = UTEC` y el correo confirmado.
 4. **Tras invocar UTEC:** respuesta exitosa de `CrearAlumno` y registro UTEC en `t_alumnos`.
