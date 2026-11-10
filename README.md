@@ -17,13 +17,15 @@ flowchart LR
 
 `CrearAlumno` guarda todos los datos y publica el evento con el atributo SNS `tenant_id`. Los dos suscriptores Lambda almacenan `tenant_id`, `alumno_id` y `alumno_nombre`. El PDF no define el esquema del sistema de seguridad; la tabla de seguridad es una simulación mínima de ese destino. Las tres suscripciones filtran `UTEC` usando atributos del mensaje. Un evento `UNIV2` sí queda en `t_alumnos`, pero no llega al correo ni a las tablas de Canvas y Seguridad.
 
+La tabla `t_alumnos` **ya existe en la cuenta del laboratorio**. Este stack la utiliza, pero no la crea ni la elimina. Debe tener clave de partición `tenant_id` (String) y clave de ordenación `alumno_id` (String).
+
 ## Antes del despliegue
 
 - Cuenta AWS de destino para este laboratorio: `904208419583`; región: `us-east-1`.
 - Rol de ejecución Lambda definido en `serverless.yml`: `LabRole` de la cuenta AWS activa (`${aws:accountId}`). Este rol debe poder escribir en DynamoDB, publicar en SNS y escribir logs en CloudWatch. La identidad que ejecuta `serverless deploy` también necesita permisos para crear el stack y pasar `LabRole` a Lambda.
 - Una instancia EC2 Amazon Linux 2023 con acceso a Internet, Git, Node.js, npm, AWS CLI y credenciales temporales o un perfil de instancia válidos de la **misma cuenta**. `LabRole` en la configuración es el rol de las Lambda; no configura automáticamente las credenciales de EC2.
 - Un correo propio para recibir y confirmar la suscripción de SNS.
-- Nombres `NuevoAlumno`, `t_alumnos`, `t_alumnos_canvas`, `t_alumnos_seguridad` y las tres Lambda libres en la cuenta/región. El taller supone que aún no existen.
+- La tabla existente `t_alumnos` con las claves indicadas. Los nombres `NuevoAlumno`, `t_alumnos_canvas`, `t_alumnos_seguridad` y las tres Lambda deben estar libres en la cuenta/región.
 
 ## Despliegue desde EC2
 
@@ -35,9 +37,10 @@ node --version
 aws --version
 aws sts get-caller-identity --query Account --output text
 aws iam get-role --role-name LabRole --query 'Role.Arn' --output text
+aws dynamodb describe-table --region us-east-1 --table-name t_alumnos --query 'Table.{Status:TableStatus,Keys:KeySchema,Attributes:AttributeDefinitions}' --output json
 ```
 
-**Detente si la cuenta no es `904208419583` o el ARN de `LabRole` no pertenece a esa cuenta.** Selecciona el perfil/credenciales del laboratorio de esa cuenta antes de seguir. Evita guardar claves permanentes en el repositorio.
+**Detente si la cuenta no es `904208419583`, el ARN de `LabRole` no pertenece a esa cuenta, o `t_alumnos` no tiene `tenant_id` y `alumno_id` como claves String.** Selecciona el perfil/credenciales del laboratorio de esa cuenta antes de seguir. Evita guardar claves permanentes en el repositorio.
 
 La AMI de Amazon Linux suele traer AWS CLI. Si `aws --version` no funciona, instálalo siguiendo la [guía oficial de AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
@@ -102,4 +105,4 @@ Las últimas dos consultas no deben devolver `Item`. Tampoco debe llegar un corr
 python3 -m unittest discover -s tests -v
 ```
 
-Cuando ya hayas guardado las evidencias, puedes retirar la infraestructura desde EC2 con `npx serverless remove --region us-east-1 --stage dev`. Esto **elimina las tres tablas y sus datos**; exporta primero cualquier evidencia o dato que necesites conservar. La instancia EC2 se detiene o elimina por separado.
+Cuando ya hayas guardado las evidencias, puedes retirar la infraestructura desde EC2 con `npx serverless remove --region us-east-1 --stage dev`. Esto **elimina las tablas de Canvas y Seguridad y sus datos**; exporta primero cualquier evidencia o dato que necesites conservar. La tabla existente `t_alumnos` permanece. La instancia EC2 se detiene o elimina por separado.

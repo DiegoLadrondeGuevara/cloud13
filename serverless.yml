@@ -12,7 +12,7 @@ provider:
   iam:
     role: arn:aws:iam::${aws:accountId}:role/LabRole
   environment:
-    ALUMNOS_TABLE: !Ref AlumnosTable
+    ALUMNOS_TABLE: t_alumnos
     CANVAS_TABLE: !Ref CanvasTable
     SEGURIDAD_TABLE: !Ref SeguridadTable
     NUEVO_ALUMNO_TOPIC_ARN: !Ref NuevoAlumnoTopic
@@ -40,22 +40,6 @@ functions:
 
 resources:
   Resources:
-    AlumnosTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: t_alumnos
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: tenant_id
-            AttributeType: S
-          - AttributeName: alumno_id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: tenant_id
-            KeyType: HASH
-          - AttributeName: alumno_id
-            KeyType: RANGE
-
     CanvasTable:
       Type: AWS::DynamoDB::Table
       Properties:
