@@ -1,0 +1,17 @@
+{
+  "tenant_id": "UNIV2",
+  "alumno_id": "2021G64747",
+  "alumno_datos": {
+    "nombre": "Juan Carrasco",
+    "sexo": "M",
+    "fecha_nac": "2000-09-01",
+    "celular": "999736332",
+    "domicilio": {
+      "direcc": "Av. Javier Prado 158",
+      "distrito": "San Isidro",
+      "provincia": "Lima",
+      "departamento": "Lima",
+      "pais": "Perú"
+    }
+  }
+}

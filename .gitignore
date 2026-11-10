@@ -1,0 +1,6 @@
+.serverless/
+.env
+node_modules/
+__pycache__/
+*.pyc
+response*.json

@@ -1,0 +1,8 @@
+{
+  "name": "cloud13-nuevo-alumno",
+  "private": true,
+  "description": "Taller de SNS, Lambda y DynamoDB desplegado desde EC2",
+  "devDependencies": {
+    "serverless": "3.40.0"
+  }
+}

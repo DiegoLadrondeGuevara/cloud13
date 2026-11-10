@@ -1,0 +1,17 @@
+{
+  "tenant_id": "UTEC",
+  "alumno_id": "2020777990",
+  "alumno_datos": {
+    "nombre": "Carla Espinoza",
+    "sexo": "F",
+    "fecha_nac": "2000-09-01",
+    "celular": "999736332",
+    "domicilio": {
+      "direcc": "Av. Javier Prado 158",
+      "distrito": "San Isidro",
+      "provincia": "Lima",
+      "departamento": "Lima",
+      "pais": "Perú"
+    }
+  }
+}

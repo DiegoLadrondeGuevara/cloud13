@@ -1,0 +1,151 @@
+service: cloud13-nuevo-alumno
+org: diegoladrondeg
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  stage: dev
+  memorySize: 256
+  timeout: 30
+  iam:
+    role: arn:aws:iam::804190897568:role/LabRole
+  environment:
+    ALUMNOS_TABLE: !Ref AlumnosTable
+    CANVAS_TABLE: !Ref CanvasTable
+    SEGURIDAD_TABLE: !Ref SeguridadTable
+    NUEVO_ALUMNO_TOPIC_ARN: !Ref NuevoAlumnoTopic
+
+package:
+  patterns:
+    - '!**'
+    - 'src/**'
+    - '!src/**/__pycache__/**'
+    - '!src/**/*.pyc'
+
+functions:
+  crearAlumno:
+    name: CrearAlumno
+    handler: src.crear_alumno.handler
+    description: Guarda al alumno y publica el evento NuevoAlumno.
+  crearAlumnoCanvas:
+    name: CrearAlumno_Canvas
+    handler: src.crear_alumno_canvas.handler
+    description: Suscriptor SNS para la tabla de Canvas.
+  crearAlumnoSeguridad:
+    name: CrearAlumno_Seguridad
+    handler: src.crear_alumno_seguridad.handler
+    description: Suscriptor SNS para la tabla de Seguridad.
+
+resources:
+  Resources:
+    AlumnosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_alumnos
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: alumno_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: alumno_id
+            KeyType: RANGE
+
+    CanvasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_alumnos_canvas
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: alumno_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: alumno_id
+            KeyType: RANGE
+
+    SeguridadTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_alumnos_seguridad
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: alumno_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: alumno_id
+            KeyType: RANGE
+
+    NuevoAlumnoTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: NuevoAlumno
+
+    CanvasInvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !GetAtt CrearAlumnoCanvasLambdaFunction.Arn
+        Principal: sns.amazonaws.com
+        SourceArn: !Ref NuevoAlumnoTopic
+
+    SeguridadInvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !GetAtt CrearAlumnoSeguridadLambdaFunction.Arn
+        Principal: sns.amazonaws.com
+        SourceArn: !Ref NuevoAlumnoTopic
+
+    CanvasSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn: CanvasInvokePermission
+      Properties:
+        TopicArn: !Ref NuevoAlumnoTopic
+        Protocol: lambda
+        Endpoint: !GetAtt CrearAlumnoCanvasLambdaFunction.Arn
+        FilterPolicyScope: MessageAttributes
+        FilterPolicy:
+          tenant_id:
+            - UTEC
+
+    SeguridadSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn: SeguridadInvokePermission
+      Properties:
+        TopicArn: !Ref NuevoAlumnoTopic
+        Protocol: lambda
+        Endpoint: !GetAtt CrearAlumnoSeguridadLambdaFunction.Arn
+        FilterPolicyScope: MessageAttributes
+        FilterPolicy:
+          tenant_id:
+            - UTEC
+
+    EmailSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref NuevoAlumnoTopic
+        Protocol: email
+        Endpoint: ${env:NOTIFICATION_EMAIL}
+        FilterPolicyScope: MessageAttributes
+        FilterPolicy:
+          tenant_id:
+            - UTEC
+
+  Outputs:
+    NuevoAlumnoTopicArn:
+      Value: !Ref NuevoAlumnoTopic
+    CrearAlumnoArn:
+      Value: !GetAtt CrearAlumnoLambdaFunction.Arn
